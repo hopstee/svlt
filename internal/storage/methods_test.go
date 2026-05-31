@@ -8,12 +8,11 @@ import (
 	"testing"
 )
 
-// Вспомогательный метод инициализации хранилища для каждого теста
+// Инициализации хранилища
 func setupTestStorage(t *testing.T) (*Storage, func()) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test_bbolt.db")
 
-	// Используем ваш конструктор, который сам создает и инициализирует бакеты
 	storage, err := NewStorage(dbPath)
 	if err != nil {
 		slog.Error("failed to create storage", slog.Any("error", err))
