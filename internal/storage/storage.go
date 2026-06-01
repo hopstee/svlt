@@ -13,6 +13,23 @@ type Storage struct {
 	db *bbolt.DB
 }
 
+func Execute[T any](storePath string, fn func(store *Storage) (T, error)) (T, error) {
+	var result T
+
+	store, err := NewStorage(storePath)
+	if err != nil {
+		return result, err
+	}
+	defer store.Close()
+
+	result, err = fn(store)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
 func openOrCreateDB(storePath string) (*bbolt.DB, error) {
 	return bbolt.Open(storePath, 0600, &bbolt.Options{Timeout: 1 * time.Second})
 }
