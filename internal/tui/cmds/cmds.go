@@ -1,0 +1,38 @@
+package cmds
+
+import (
+	tea "charm.land/bubbletea/v2"
+	"github.com/hopstee/svlt/internal/storage"
+)
+
+type MsgBackToList struct{}
+type MsgOpenCreate struct{}
+type MsgOpenEdit struct{ Conn storage.Connection }
+type MsgOpenDelete struct{ ConnName string }
+type MsgRefreshList struct{ Conns []storage.Connection }
+
+func BackToList() tea.Msg {
+	return MsgBackToList{}
+}
+
+func OpenCreate() tea.Msg {
+	return MsgOpenCreate{}
+}
+
+func OpenEdit(conn storage.Connection) func() tea.Msg {
+	return func() tea.Msg {
+		return MsgOpenEdit{Conn: conn}
+	}
+}
+
+func OpenDelete(connName string) func() tea.Msg {
+	return func() tea.Msg {
+		return MsgOpenDelete{ConnName: connName}
+	}
+}
+
+func RefreshList(conns []storage.Connection) func() tea.Msg {
+	return func() tea.Msg {
+		return MsgRefreshList{Conns: conns}
+	}
+}

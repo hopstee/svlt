@@ -1,4 +1,4 @@
-package tui
+package submodels
 
 import tea "charm.land/bubbletea/v2"
 
@@ -17,5 +17,7 @@ func (dm *DeleteModel) Update(msg tea.Msg) (*DeleteModel, tea.Cmd) {
 }
 
 func (dm *DeleteModel) View() tea.View {
-	return tea.NewView("Delete view")
+	v := tea.NewView("Delete view")
+	v.AltScreen = true
+	return v
 }

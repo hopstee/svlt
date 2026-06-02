@@ -1,4 +1,4 @@
-package tui
+package submodels
 
 import tea "charm.land/bubbletea/v2"
 
@@ -17,5 +17,7 @@ func (cm *CreateModel) Update(msg tea.Msg) (*CreateModel, tea.Cmd) {
 }
 
 func (cm *CreateModel) View() tea.View {
-	return tea.NewView("Create view")
+	v := tea.NewView("Create view")
+	v.AltScreen = true
+	return v
 }

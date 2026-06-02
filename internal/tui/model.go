@@ -3,6 +3,8 @@ package tui
 import (
 	"github.com/hopstee/svlt/internal/keyring"
 	"github.com/hopstee/svlt/internal/storage"
+	"github.com/hopstee/svlt/internal/tui/cmds"
+	"github.com/hopstee/svlt/internal/tui/submodels"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -22,11 +24,10 @@ type RootModel struct {
 	kr          *keyring.Keyring
 	dataPath    string
 
-	// TODO: create submodels
-	listModel   *ListModel
-	createModel *CreateModel
-	editModel   *EditModel
-	deleteModel *DeleteModel
+	listModel   *submodels.ListModel
+	createModel *submodels.CreateModel
+	editModel   *submodels.EditModel
+	deleteModel *submodels.DeleteModel
 }
 
 func NewRootModel(conns []storage.Connection, kr *keyring.Keyring, dataPath string) *RootModel {
@@ -36,8 +37,7 @@ func NewRootModel(conns []storage.Connection, kr *keyring.Keyring, dataPath stri
 		kr:          kr,
 		dataPath:    dataPath,
 
-		// TODO: init submodels with data
-		listModel: NewListModel(conns),
+		listModel: submodels.NewListModel(conns),
 	}
 }
 
@@ -57,24 +57,24 @@ func (rm *RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (rm *RootModel) handleCustomCommands(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case MsgBackToList:
+	case cmds.MsgBackToList:
 		rm.state = StateList
 		return rm, nil
-	case MsgOpenCreate:
-		rm.createModel = NewCreateModel()
+	case cmds.MsgOpenCreate:
+		rm.createModel = submodels.NewCreateModel()
 		rm.state = StateCreate
 		return rm, rm.createModel.Init()
-	case MsgOpenEdit:
-		rm.editModel = NewEditModel()
+	case cmds.MsgOpenEdit:
+		rm.editModel = submodels.NewEditModel()
 		rm.state = StateEdit
 		return rm, rm.editModel.Init()
-	case MsgOpenDelete:
-		rm.deleteModel = NewDeleteModel()
+	case cmds.MsgOpenDelete:
+		rm.deleteModel = submodels.NewDeleteModel()
 		rm.state = StateDelete
 		return rm, rm.deleteModel.Init()
-	case MsgRefreshList:
-		rm.connections = msg.conns
-		rm.listModel = rm.listModel.UpdateConnections(msg.conns)
+	case cmds.MsgRefreshList:
+		rm.connections = msg.Conns
+		rm.listModel = rm.listModel.UpdateConnections(msg.Conns)
 		rm.state = StateList
 		return rm, nil
 	}
@@ -109,11 +109,11 @@ func (rm *RootModel) View() tea.View {
 	case StateList:
 		return rm.listModel.View()
 	case StateCreate:
-	// TODO: return rm.createModel.View()
+		return rm.createModel.View()
 	case StateEdit:
-	// TODO: return rm.editModel.View()
+		return rm.editModel.View()
 	case StateDelete:
-		// TODO: return rm.deleteModel.View()
+		return rm.deleteModel.View()
 	}
 	return tea.NewView("Unknown state")
 }

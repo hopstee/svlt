@@ -1,4 +1,4 @@
-package tui
+package submodels
 
 import tea "charm.land/bubbletea/v2"
 
@@ -17,5 +17,7 @@ func (em *EditModel) Update(msg tea.Msg) (*EditModel, tea.Cmd) {
 }
 
 func (em *EditModel) View() tea.View {
-	return tea.NewView("Edit view")
+	v := tea.NewView("Edit view")
+	v.AltScreen = true
+	return v
 }
