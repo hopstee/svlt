@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"context"
+
 	"github.com/hopstee/svlt/internal/keyring"
 	"github.com/hopstee/svlt/internal/storage"
 	"github.com/hopstee/svlt/internal/tui/cmds"
@@ -19,23 +21,32 @@ const (
 )
 
 type RootModel struct {
-	state       RootState
-	connections []storage.Connection
-	kr          *keyring.Keyring
-	dataPath    string
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	state RootState
+	kr    *keyring.Keyring
+	store *storage.Storage
 
 	listModel   *submodels.ListModel
-	createModel *submodels.CreateModel
-	editModel   *submodels.EditModel
+	upsertModel *submodels.UpsertModel
 	deleteModel *submodels.DeleteModel
 }
 
-func NewRootModel(conns []storage.Connection, kr *keyring.Keyring, dataPath string) *RootModel {
+func NewRootModel(
+	rootCtx context.Context,
+	conns []storage.Connection,
+	kr *keyring.Keyring,
+	st *storage.Storage,
+) *RootModel {
+	ctx, cancel := context.WithCancel(rootCtx)
 	return &RootModel{
-		state:       StateList,
-		connections: conns,
-		kr:          kr,
-		dataPath:    dataPath,
+		ctx:    ctx,
+		cancel: cancel,
+
+		state: StateList,
+		kr:    kr,
+		store: st,
 
 		listModel: submodels.NewListModel(conns),
 	}
@@ -61,19 +72,31 @@ func (rm *RootModel) handleCustomCommands(msg tea.Msg) (tea.Model, tea.Cmd) {
 		rm.state = StateList
 		return rm, nil
 	case cmds.MsgOpenCreate:
-		rm.createModel = submodels.NewCreateModel()
+		rm.upsertModel = submodels.NewUpsertModel(
+			rm.ctx,
+			rm.store,
+			storage.UpsertConnectionDto{},
+			nil,
+			submodels.UpsertCreateMode,
+		)
 		rm.state = StateCreate
-		return rm, rm.createModel.Init()
+		return rm, rm.upsertModel.Init()
 	case cmds.MsgOpenEdit:
-		rm.editModel = submodels.NewEditModel()
+		upsertConnectionDto := storage.ConnectionToUpsertConnectionDto(msg.Conn)
+		rm.upsertModel = submodels.NewUpsertModel(
+			rm.ctx,
+			rm.store,
+			upsertConnectionDto,
+			&msg.Conn.ID,
+			submodels.UpsertUpdateMode,
+		)
 		rm.state = StateEdit
-		return rm, rm.editModel.Init()
+		return rm, rm.upsertModel.Init()
 	case cmds.MsgOpenDelete:
 		rm.deleteModel = submodels.NewDeleteModel()
 		rm.state = StateDelete
 		return rm, rm.deleteModel.Init()
 	case cmds.MsgRefreshList:
-		rm.connections = msg.Conns
 		rm.listModel = rm.listModel.UpdateConnections(msg.Conns)
 		rm.state = StateList
 		return rm, nil
@@ -90,11 +113,8 @@ func (rm *RootModel) delegateEventToActiveSubmodel(msg tea.Msg) []tea.Cmd {
 	case StateList:
 		rm.listModel, cmd = rm.listModel.Update(msg)
 		cmds = append(cmds, cmd)
-	case StateCreate:
-		rm.createModel, cmd = rm.createModel.Update(msg)
-		cmds = append(cmds, cmd)
-	case StateEdit:
-		rm.editModel, cmd = rm.editModel.Update(msg)
+	case StateCreate, StateEdit:
+		rm.upsertModel, cmd = rm.upsertModel.Update(msg)
 		cmds = append(cmds, cmd)
 	case StateDelete:
 		rm.deleteModel, cmd = rm.deleteModel.Update(msg)
@@ -108,10 +128,8 @@ func (rm *RootModel) View() tea.View {
 	switch rm.state {
 	case StateList:
 		return rm.listModel.View()
-	case StateCreate:
-		return rm.createModel.View()
-	case StateEdit:
-		return rm.editModel.View()
+	case StateCreate, StateEdit:
+		return rm.upsertModel.View()
 	case StateDelete:
 		return rm.deleteModel.View()
 	}

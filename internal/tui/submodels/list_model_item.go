@@ -16,7 +16,7 @@ func (i listModelItem) Title() string {
 }
 
 func (i listModelItem) Description() string {
-	return fmt.Sprintf("%s:%d", i.Host, i.Port)
+	return fmt.Sprintf("%s:%s", i.Host, i.Port)
 }
 
 func (i listModelItem) FilterValue() string {

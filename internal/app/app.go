@@ -8,11 +8,12 @@ import (
 
 	"github.com/hopstee/svlt/internal/cmds"
 	"github.com/hopstee/svlt/internal/keyring"
+	"github.com/hopstee/svlt/internal/storage"
 )
 
 const (
 	appName       = "svlt"
-	appHoddenName = "." + appName
+	appHiddenName = "." + appName
 	appDbName     = appName + ".db"
 )
 
@@ -36,7 +37,14 @@ func (a *App) Run() error {
 	}
 
 	keystore := keyring.NewKeyring(appName)
-	cmds.InitCLI(appDataPath, keystore)
+	store, err := storage.NewStorage(appDataPath)
+	if err != nil {
+		return fmt.Errorf("Failed to create storage instance: %v", err)
+	}
+	if err := store.Init(a.ctx); err != nil {
+		return fmt.Errorf("Failed init tables: %v", err)
+	}
+	cmds.InitCLI(store, keystore)
 
 	return cmds.RootCmd.ExecuteContext(a.ctx)
 }
@@ -47,12 +55,12 @@ func (a *App) Stop() error {
 }
 
 func (a *App) initAppDataPath() (string, error) {
-	userDir, err := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("Failed get user directory: %v", err)
+		return "", fmt.Errorf("Failed get user directory: %w", err)
 	}
 
-	appDir := filepath.Join(userDir, appHoddenName)
+	appDir := filepath.Join(homeDir, appHiddenName)
 	if err := os.MkdirAll(appDir, 0755); err != nil {
 		return "", fmt.Errorf("Failed open or create app data directory")
 	}

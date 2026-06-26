@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/hopstee/svlt/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -15,12 +14,7 @@ var connectCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 
-		store, err := storage.NewStorage(dataPath)
-		if err != nil {
-			return fmt.Errorf("Failed to open storage: %v", err)
-		}
-
-		conn, err := store.GetOneByName(name)
+		conn, err := store.GetOneByName(cmd.Context(), name)
 		if err != nil {
 			return fmt.Errorf("Failed to get single connection: %v", err)
 		}

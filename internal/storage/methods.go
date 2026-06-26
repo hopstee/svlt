@@ -1,162 +1,194 @@
 package storage
 
 import (
-	"encoding/json"
-	"log/slog"
+	"context"
+	"database/sql"
+	"errors"
 	"strings"
 
 	"github.com/google/uuid"
-	"go.etcd.io/bbolt"
 )
 
-func (s *Storage) GetConns() ([]Connection, error) {
+func (s *Storage) GetConns(ctx context.Context) ([]Connection, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT
+			id,
+			label,
+			folder_id,
+			last_used,
+			is_active,
+			is_pinned,
+			host,
+			port,
+			user,
+			auth_method,
+			key_path
+		FROM connections
+		ORDER BY label;
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
 	var conns []Connection
-	err := s.db.View(func(tx *bbolt.Tx) error {
-		connsBucket := tx.Bucket([]byte(CONNECTIONS_BUCKET))
-		if connsBucket == nil {
-			return ErrConnectionBucketNotFound
-		}
 
-		return connsBucket.ForEach(func(k, v []byte) error {
-			var c Connection
-			if err := json.Unmarshal(v, &c); err != nil {
-				return err
-			}
-			conns = append(conns, c)
-			return nil
-		})
-	})
-	return conns, err
-}
+	for rows.Next() {
+		var c Connection
 
-func (s *Storage) GetOneByName(name string) (*Connection, error) {
-	var conn *Connection
-	err := s.db.View(func(tx *bbolt.Tx) error {
-		connsBucket := tx.Bucket([]byte(CONNECTIONS_BUCKET))
-		if connsBucket == nil {
-			return ErrConnectionBucketNotFound
-		}
-
-		conn = s.getOneByName(connsBucket, name)
-		if conn == nil {
-			return ErrConnectionNotFound
-		}
-		return nil
-	})
-	return conn, err
-}
-
-func (s *Storage) getOneByName(bucket *bbolt.Bucket, name string) *Connection {
-	key := []byte(s.getKey(name))
-	v := bucket.Get(key)
-	if v == nil {
-		return nil
-	}
-
-	var conn Connection
-	if err := json.Unmarshal(v, &conn); err != nil {
-		return nil
-	}
-	return &conn
-}
-
-func (s *Storage) AddConn(newConn *UpsertConnectionDto) error {
-	return s.db.Update(func(tx *bbolt.Tx) error {
-		connsBucket := tx.Bucket([]byte(CONNECTIONS_BUCKET))
-		if connsBucket == nil {
-			return ErrConnectionBucketNotFound
-		}
-
-		existingConn := s.getOneByName(connsBucket, newConn.Label)
-		if existingConn != nil {
-			return ErrConnectionAlreadyExists
-		}
-
-		bConn, err := s.connectionToByte("", newConn)
+		err := rows.Scan(
+			&c.ID,
+			&c.Label,
+			&c.FolderID,
+			&c.LastUsed,
+			&c.IsActive,
+			&c.IsPinned,
+			&c.Host,
+			&c.Port,
+			&c.User,
+			&c.AuthMethod,
+			&c.KeyPath,
+		)
 		if err != nil {
-			slog.Error(ErrConnectionToBytes.Error(), slog.Any("error", err))
-			return ErrConnectionToBytes
+			return nil, err
 		}
 
-		return connsBucket.Put([]byte(s.getKey(newConn.Label)), bConn)
-	})
-}
-
-func (s *Storage) Update(oldName string, updatedConn *UpsertConnectionDto) error {
-	return s.db.Update(func(tx *bbolt.Tx) error {
-		connsBucket := tx.Bucket([]byte(CONNECTIONS_BUCKET))
-		if connsBucket == nil {
-			return ErrConnectionBucketNotFound
-		}
-
-		existingConn := s.getOneByName(connsBucket, oldName)
-		if existingConn == nil {
-			return ErrConnectionNotFound
-		}
-
-		bConn, err := s.connectionToByte(existingConn.ID, updatedConn)
-		if err != nil {
-			slog.Error(ErrConnectionToBytes.Error(), slog.Any("error", err))
-			return ErrConnectionToBytes
-		}
-
-		if s.getKey(oldName) != s.getKey(updatedConn.Label) {
-			if s.getOneByName(connsBucket, updatedConn.Label) != nil {
-				return ErrConnectionAlreadyExists
-			}
-			if err := connsBucket.Put([]byte(s.getKey(updatedConn.Label)), bConn); err != nil {
-				slog.Error(ErrUpdateConnection.Error(), slog.Any("error", err))
-				return ErrUpdateConnection
-			}
-			if err := connsBucket.Delete([]byte(s.getKey(oldName))); err != nil {
-				return ErrFailedDelete
-			}
-			return nil
-		}
-
-		return connsBucket.Put([]byte(s.getKey(oldName)), bConn)
-	})
-}
-
-func (s *Storage) connectionToByte(ID string, conn *UpsertConnectionDto) ([]byte, error) {
-	if ID == "" {
-		ID = uuid.New().String()
+		conns = append(conns, c)
 	}
 
-	r := Connection{
-		ID:         ID,
-		Label:      conn.Label,
-		Host:       conn.Host,
-		Port:       conn.Port,
-		User:       conn.User,
-		AuthMethod: conn.AuthMethod,
-		KeyPath:    conn.KeyPath,
+	return conns, rows.Err()
+}
+
+func (s *Storage) GetOneByName(ctx context.Context, name string) (*Connection, error) {
+	var c Connection
+
+	err := s.db.QueryRowContext(ctx, `
+		SELECT
+			id,
+			label,
+			folder_id,
+			last_used,
+			is_active,
+			is_pinned,
+			host,
+			port,
+			user,
+			auth_method,
+			key_path
+		FROM connections
+		WHERE LOWER(label) = LOWER(?)
+		LIMIT 1;
+	`, strings.TrimSpace(name)).
+		Scan(
+			&c.ID,
+			&c.Label,
+			&c.FolderID,
+			&c.LastUsed,
+			&c.IsActive,
+			&c.IsPinned,
+			&c.Host,
+			&c.Port,
+			&c.User,
+			&c.AuthMethod,
+			&c.KeyPath,
+		)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrConnectionNotFound
 	}
 
-	v, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return v, nil
+	return &c, nil
 }
 
-func (s *Storage) DeleteConn(name string) error {
-	return s.db.Update(func(tx *bbolt.Tx) error {
-		connsBucket := tx.Bucket([]byte(CONNECTIONS_BUCKET))
-		if connsBucket == nil {
-			return ErrConnectionBucketNotFound
-		}
+func (s *Storage) AddConn(ctx context.Context, dto *UpsertConnectionDto) error {
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO connections (
+			id,
+			label,
+			host,
+			port,
+			user,
+			auth_method,
+			key_path
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`,
+		uuid.NewString(),
+		dto.Label,
+		dto.Host,
+		dto.Port,
+		dto.User,
+		dto.AuthMethod,
+		dto.KeyPath,
+	)
 
-		existingConn := s.getOneByName(connsBucket, name)
-		if existingConn == nil {
-			return ErrConnectionNotFound
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return ErrConnectionAlreadyExists
 		}
+		return err
+	}
 
-		return connsBucket.Delete([]byte(s.getKey(name)))
-	})
+	return nil
 }
 
-func (s *Storage) getKey(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
+func (s *Storage) Update(ctx context.Context, id string, dto *UpsertConnectionDto) error {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE connections
+		SET
+			label = ?,
+			host = ?,
+			port = ?,
+			user = ?,
+			auth_method = ?,
+			key_path = ?
+		WHERE id = ?
+	`,
+		dto.Label,
+		dto.Host,
+		dto.Port,
+		dto.User,
+		dto.AuthMethod,
+		dto.KeyPath,
+		id,
+	)
+	if err != nil {
+		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrConnectionNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) DeleteConn(ctx context.Context, ID string) error {
+	res, err := s.db.ExecContext(ctx, `
+		DELETE FROM connections
+		WHERE id = ?
+	`, ID)
+	if err != nil {
+		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrConnectionNotFound
+	}
+
+	return nil
 }

@@ -1,60 +1,57 @@
 package storage
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
-	"time"
 
-	"go.etcd.io/bbolt"
+	_ "modernc.org/sqlite"
 )
 
-const CONNECTIONS_BUCKET = "ssh_connections"
-
 type Storage struct {
-	db *bbolt.DB
+	db *sql.DB
 }
 
-func Execute[T any](storePath string, fn func(store *Storage) (T, error)) (T, error) {
-	var result T
+func openOrCreateDB(dbFile string) (*sql.DB, error) {
+	return sql.Open("sqlite", dbFile)
+}
 
-	store, err := NewStorage(storePath)
-	if err != nil {
-		return result, err
-	}
-	defer store.Close()
+func createTablesIfNotExsits(ctx context.Context, db *sql.DB) error {
+	var err error
 
-	result, err = fn(store)
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return result, err
+		return fmt.Errorf("Failed begin transaction: %w", err)
 	}
 
-	return result, nil
-}
-
-func openOrCreateDB(storePath string) (*bbolt.DB, error) {
-	return bbolt.Open(storePath, 0600, &bbolt.Options{Timeout: 1 * time.Second})
-}
-
-func createBucketsIfNotExsits(db *bbolt.DB) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(CONNECTIONS_BUCKET))
+	for _, q := range stmts {
+		_, err = tx.ExecContext(ctx, q.SQL)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to create '%s' table: %w", q.Name, err)
 		}
-		return nil
-	})
-}
-
-func NewStorage(storePath string) (*Storage, error) {
-	db, err := openOrCreateDB(storePath)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to open or create database: %v", err)
 	}
 
-	if err := createBucketsIfNotExsits(db); err != nil {
-		return nil, fmt.Errorf("Failed to create buckets in database: %v", err)
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("Failed commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func NewStorage(dbFile string) (*Storage, error) {
+	db, err := openOrCreateDB(dbFile)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open or create database: %w", err)
 	}
 
 	return &Storage{db: db}, nil
+}
+
+func (s *Storage) Init(ctx context.Context) error {
+	if err := createTablesIfNotExsits(ctx, s.db); err != nil {
+		return fmt.Errorf("Failed to create tables in database: %w", err)
+	}
+	return nil
 }
 
 func (s *Storage) Close() error {
