@@ -8,7 +8,7 @@ import (
 type MsgBackToList struct{}
 type MsgOpenCreate struct{}
 type MsgOpenEdit struct{ Conn storage.Connection }
-type MsgOpenDelete struct{ ConnName string }
+type MsgOpenDelete struct{ ConnID string }
 type MsgRefreshList struct{ Conns []storage.Connection }
 
 func BackToList() tea.Msg {
@@ -25,9 +25,9 @@ func OpenEdit(conn storage.Connection) func() tea.Msg {
 	}
 }
 
-func OpenDelete(connName string) func() tea.Msg {
+func OpenDelete(connID string) func() tea.Msg {
 	return func() tea.Msg {
-		return MsgOpenDelete{ConnName: connName}
+		return MsgOpenDelete{ConnID: connID}
 	}
 }
 

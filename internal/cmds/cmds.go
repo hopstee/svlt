@@ -6,7 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/hopstee/svlt/internal/keyring"
 	"github.com/hopstee/svlt/internal/storage"
-	"github.com/hopstee/svlt/internal/tui"
+	"github.com/hopstee/svlt/internal/tui/root"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +29,7 @@ var RootCmd = &cobra.Command{
 			return fmt.Errorf("Failed to load connections: %v", err)
 		}
 
-		tui := tui.NewRootModel(cmd.Context(), connections, appKeyring, store)
+		tui := root.NewModel(cmd.Context(), connections, appKeyring, store)
 		tuiProgram := tea.NewProgram(tui)
 		if _, err := tuiProgram.Run(); err != nil {
 			return fmt.Errorf("TUI terminated with error: %v", err)

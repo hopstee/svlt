@@ -1,9 +1,8 @@
-package submodels
+package list
 
 import (
 	"fmt"
 
-	"charm.land/bubbles/v2/list"
 	"github.com/hopstee/svlt/internal/storage"
 )
 
@@ -21,12 +20,4 @@ func (i listModelItem) Description() string {
 
 func (i listModelItem) FilterValue() string {
 	return fmt.Sprintf("%s:%s", i.Host, i.Label)
-}
-
-func connectionToItem(conns []storage.Connection) []list.Item {
-	items := make([]list.Item, len(conns))
-	for i, c := range conns {
-		items[i] = listModelItem{Connection: c}
-	}
-	return items
 }
