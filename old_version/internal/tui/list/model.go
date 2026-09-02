@@ -4,8 +4,8 @@ import (
 	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
-	"github.com/hopstee/svlt/internal/storage"
-	"github.com/hopstee/svlt/internal/tui/styles"
+	"github.com/hopstee/svlt/old_version/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/tui/styles"
 )
 
 type Model struct {

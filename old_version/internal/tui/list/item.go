@@ -3,7 +3,7 @@ package list
 import (
 	"fmt"
 
-	"github.com/hopstee/svlt/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/storage"
 )
 
 type listModelItem struct {

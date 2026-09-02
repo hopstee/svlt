@@ -5,7 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
-	"github.com/hopstee/svlt/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/storage"
 )
 
 type Model struct {

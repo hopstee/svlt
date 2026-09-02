@@ -2,7 +2,7 @@ package list
 
 import (
 	"charm.land/bubbles/v2/list"
-	"github.com/hopstee/svlt/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/storage"
 )
 
 func connectionToItem(conns []storage.Connection) []list.Item {

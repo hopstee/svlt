@@ -3,9 +3,9 @@ package list
 import (
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
-	"github.com/hopstee/svlt/internal/storage"
-	"github.com/hopstee/svlt/internal/tui/cmds"
-	"github.com/hopstee/svlt/internal/tui/styles"
+	"github.com/hopstee/svlt/old_version/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/tui/cmds"
+	"github.com/hopstee/svlt/old_version/internal/tui/styles"
 )
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {

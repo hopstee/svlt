@@ -4,11 +4,11 @@ import (
 	"context"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/hopstee/svlt/internal/keyring"
-	"github.com/hopstee/svlt/internal/storage"
-	"github.com/hopstee/svlt/internal/tui/delete"
-	"github.com/hopstee/svlt/internal/tui/list"
-	"github.com/hopstee/svlt/internal/tui/upsert"
+	"github.com/hopstee/svlt/old_version/internal/keyring"
+	"github.com/hopstee/svlt/old_version/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/tui/delete"
+	"github.com/hopstee/svlt/old_version/internal/tui/list"
+	"github.com/hopstee/svlt/old_version/internal/tui/upsert"
 )
 
 type RootState int

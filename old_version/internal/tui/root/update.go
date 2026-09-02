@@ -2,10 +2,10 @@ package root
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"github.com/hopstee/svlt/internal/storage"
-	"github.com/hopstee/svlt/internal/tui/cmds"
-	"github.com/hopstee/svlt/internal/tui/delete"
-	"github.com/hopstee/svlt/internal/tui/upsert"
+	"github.com/hopstee/svlt/old_version/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/tui/cmds"
+	"github.com/hopstee/svlt/old_version/internal/tui/delete"
+	"github.com/hopstee/svlt/old_version/internal/tui/upsert"
 )
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

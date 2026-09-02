@@ -2,7 +2,7 @@ package cmds
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"github.com/hopstee/svlt/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/storage"
 )
 
 type MsgBackToList struct{}

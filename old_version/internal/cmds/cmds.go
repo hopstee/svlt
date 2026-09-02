@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/hopstee/svlt/internal/keyring"
-	"github.com/hopstee/svlt/internal/storage"
-	"github.com/hopstee/svlt/internal/tui/root"
+	"github.com/hopstee/svlt/old_version/internal/keyring"
+	"github.com/hopstee/svlt/old_version/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/tui/root"
 	"github.com/spf13/cobra"
 )
 

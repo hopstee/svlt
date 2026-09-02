@@ -3,8 +3,8 @@ package upsert
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
-	"github.com/hopstee/svlt/internal/storage"
-	"github.com/hopstee/svlt/internal/tui/cmds"
+	"github.com/hopstee/svlt/old_version/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/tui/cmds"
 )
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {

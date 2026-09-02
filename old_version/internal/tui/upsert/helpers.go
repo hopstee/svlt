@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"charm.land/huh/v2"
-	"github.com/hopstee/svlt/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/storage"
 )
 
 func loadSSHConfigs() ([]huh.Option[string], error) {

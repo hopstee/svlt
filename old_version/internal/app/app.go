@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hopstee/svlt/internal/cmds"
-	"github.com/hopstee/svlt/internal/keyring"
-	"github.com/hopstee/svlt/internal/storage"
+	"github.com/hopstee/svlt/old_version/internal/cmds"
+	"github.com/hopstee/svlt/old_version/internal/keyring"
+	"github.com/hopstee/svlt/old_version/internal/storage"
 )
 
 const (
